@@ -1,20 +1,18 @@
 
 import streamlit as st
 import pandas as pd
+from pathlib import Path
 
-st.set_page_config(page_title="年金网下配售查询", layout="wide")
+BASE_DIR = Path(__file__).parent
 
-st.title("2026年以来A股IPO网下配售年金计划查询")
-
-detail_file = "2026年以来_补全A股_企业年金职业年金明细.xlsx"
-summary_file = "2026年以来_补全A股_年金计划投资者汇总.xlsx"
+detail_file = BASE_DIR / "2026年以来_补全A股_企业年金职业年金明细.xlsx"
+summary_file = BASE_DIR / "2026年以来_补全A股_年金计划投资者汇总.xlsx"
 
 @st.cache_data
 def load_data():
     detail_df = pd.read_excel(detail_file).fillna("").astype(str)
     summary_df = pd.read_excel(summary_file).fillna("").astype(str)
     return detail_df, summary_df
-
 detail_df, summary_df = load_data()
 
 st.sidebar.header("查询条件")
