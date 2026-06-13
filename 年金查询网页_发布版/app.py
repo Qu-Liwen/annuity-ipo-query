@@ -19,63 +19,37 @@ def load_data():
 
 detail_df, summary_df = load_data()
 
-investor_col = [c for c in detail_df.columns if "投资者名称" in str(c)][0]
-object_col = [c for c in detail_df.columns if "配售对象名称" in str(c)][0]
+investor_col = [c for c in detail_df.columns if "投资者名称" in c][0]
+object_col = [c for c in detail_df.columns if "配售对象名称" in c][0]
 stock_col = "股票名称"
 
 tab1, tab2 = st.tabs(["基础查询", "机构对比分析"])
 
 with tab1:
-    st.sidebar.header("基础查询")
+    st.subheader("基础查询")
 
-    keyword = st.sidebar.text_input("输入配售对象 / 投资者 / 股票名称")
-    annuity_type = st.sidebar.selectbox("年金类型", ["全部", "企业年金", "职业年金"])
+    keyword = st.text_input("输入配售对象 / 投资者 / 股票名称", key="basic_keyword")
 
-    filtered_detail = detail_df.copy()
-    filtered_summary = summary_df.copy()
+    filtered = detail_df.copy()
 
     if keyword:
-        filtered_detail = filtered_detail[
-            filtered_detail.astype(str).apply(
+        filtered = filtered[
+            filtered.astype(str).apply(
                 lambda row: row.str.contains(keyword, case=False, na=False).any(),
                 axis=1
             )
-        ]
-
-        filtered_summary = filtered_summary[
-            filtered_summary.astype(str).apply(
-                lambda row: row.str.contains(keyword, case=False, na=False).any(),
-                axis=1
-            )
-        ]
-
-    if annuity_type != "全部":
-        filtered_detail = filtered_detail[
-            filtered_detail[object_col].astype(str).str.contains(annuity_type, na=False)
-        ]
-
-        filtered_summary = filtered_summary[
-            filtered_summary["配售对象名称"].astype(str).str.contains(annuity_type, na=False)
         ]
 
     col1, col2 = st.columns(2)
-    col1.metric("年金明细记录数", len(filtered_detail))
-    col2.metric("汇总计划数量", len(filtered_summary))
+    col1.metric("年金明细记录数", len(filtered))
+    col2.metric("汇总计划数量", len(summary_df))
 
-    subtab1, subtab2 = st.tabs(["按计划汇总", "明细数据"])
-
-    with subtab1:
-        st.subheader("各年金计划对应投资者")
-        st.dataframe(filtered_summary, use_container_width=True)
-
-    with subtab2:
-        st.subheader("年金网下配售明细")
-        st.dataframe(filtered_detail, use_container_width=True)
+    st.dataframe(filtered, use_container_width=True)
 
 with tab2:
     st.subheader("机构对比分析")
 
-    st.write("用于比较两家机构在 IPO 网下配售中的差异，例如：南方基金 vs 易方达基金。")
+    st.write("输入两家机构名称，查看哪些股票或年金计划是一方覆盖、另一方没有覆盖，哪些是双方共同覆盖。")
 
     col_a, col_b = st.columns(2)
 
@@ -113,24 +87,24 @@ with tab2:
     m3.metric("双方共同获配股票数", len(both_stocks))
     m4.metric("双方共同覆盖年金计划数", len(both_objects))
 
-    compare_tab1, compare_tab2, compare_tab3, compare_tab4 = st.tabs([
+    ctab1, ctab2, ctab3, ctab4 = st.tabs([
         f"{org_a}有、{org_b}没有",
         f"{org_b}有、{org_a}没有",
         "双方都有",
         "年金计划覆盖差异"
     ])
 
-    with compare_tab1:
+    with ctab1:
         st.subheader(f"{org_a}获配但{org_b}未获配的股票")
         result = a_df[a_df[stock_col].isin(only_a_stocks)]
         st.dataframe(result, use_container_width=True)
 
-    with compare_tab2:
+    with ctab2:
         st.subheader(f"{org_b}获配但{org_a}未获配的股票")
         result = b_df[b_df[stock_col].isin(only_b_stocks)]
         st.dataframe(result, use_container_width=True)
 
-    with compare_tab3:
+    with ctab3:
         st.subheader("两家机构共同获配的股票")
         result = detail_df[
             detail_df[stock_col].isin(both_stocks)
@@ -140,7 +114,7 @@ with tab2:
         ]
         st.dataframe(result, use_container_width=True)
 
-    with compare_tab4:
+    with ctab4:
         st.subheader(f"{org_a}覆盖但{org_b}未覆盖的年金计划")
         st.dataframe(pd.DataFrame({"配售对象名称": only_a_objects}), use_container_width=True)
 
